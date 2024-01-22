@@ -403,6 +403,7 @@ begin
   FAlignment := taRightJustify;
   FDisplayFormat := DefaultDisplayFormat;
   FDecimalPlaces := 2;
+  FUseThousandSeparator := True;
   FZeroEmpty := True;
   inherited Text := '';
   inherited Alignment := taLeftJustify;
