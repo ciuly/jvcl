@@ -55,6 +55,7 @@ type
     FEnforceRequired: Boolean;
     FAllowPopupBrowsing: Boolean;
     FLockEditing: Integer;
+    FFailOnInvalidDate: Boolean;
     procedure ValidateShowCheckBox; overload;
     function ValidateShowCheckBox(const AValue: Boolean): Boolean; overload;
     function GetDataField: string;
@@ -90,6 +91,7 @@ type
     procedure Loaded; override;
 
     property InternalDate: TDateTime read GetInternalDate write SetInternalDate;
+    property FailOnInvalidDate: Boolean read FFailOnInvalidDate write FFailOnInvalidDate default True;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -137,6 +139,7 @@ type
     property Enabled;
     property EnableValidation;
     property EnforceRequired;
+    property FailOnInvalidDate;
     property Font;
     property Glyph;
     property GroupIndex;
@@ -230,6 +233,11 @@ begin
   Result := Field.IsNull or ((Field is TStringField) and (Trim(Field.AsString) = ''));
 end;
 
+function IsDateField(const AField: TField; out ADateTimeValue: TDateTime): Boolean;
+begin
+  Result := AField.IsNull or ((AField is TStringField) and TryStrToDate(AField.AsString, ADateTimeValue));
+end;
+
 //=== { TJvCustomDBDatePickerEdit } ==========================================
 
 procedure TJvCustomDBDatePickerEdit.Change;
@@ -257,6 +265,7 @@ begin
     OnDataChange := DataChange;
     OnUpdateData := UpdateData;
   end;
+  FFailOnInvalidDate := True;
 end;
 
 procedure TJvCustomDBDatePickerEdit.Loaded;
@@ -267,10 +276,16 @@ begin
 end;
 
 procedure TJvCustomDBDatePickerEdit.DataChange(Sender: TObject);
+var
+  value: TDateTime;
 begin
   if IsLinked and FDataLink.Active then
   begin
     if AllowNoDate and IsNullOrEmptyStringField(FDataLink.Field) then
+      InternalDate := NoDateValue
+    else if (not FailOnInvalidDate) and IsDateField(FDataLink.Field, value) then
+      InternalDate := value
+    else if not FailOnInvalidDate then
       InternalDate := NoDateValue
     else
       InternalDate := FDataLink.Field.AsDateTime;
