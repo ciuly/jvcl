@@ -63,6 +63,7 @@ type
     FDisplayFormat: string;
     // Polaris
     FDecimalPlaceRound: Boolean;
+    FUseThousandSeparator: Boolean;
     function GetEditFormat: string; // WAP added.
     procedure SetDecimalPlaceRound(Value: Boolean);
     procedure SetFocused(Value: Boolean);
@@ -124,6 +125,7 @@ type
     property ZeroEmpty: Boolean read FZeroEmpty write SetZeroEmpty default True;
     //Polaris
     property DecimalPlaceRound: Boolean read FDecimalPlaceRound write SetDecimalPlaceRound default False;
+    property UseThousandSeparator: Boolean read FUseThousandSeparator write FUseThousandSeparator default True;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -184,6 +186,7 @@ type
     property TabOrder;
     property TabStop;
     property Text;
+    property UseThousandSeparator;
     property Value;
     property Visible;
     property ZeroEmpty;
@@ -283,6 +286,7 @@ type
     property TabOrder;
     property TabStop;
     property Text;
+    property UseThousandSeparator;
     property Value;
     property Visible;
     property ZeroEmpty;
@@ -660,12 +664,15 @@ begin
     Result := '0'
   else
   begin
-    Result := ',0'; // must put the thousands separator by default to allow direct
-                    // edit of value (paste for example), but only if there are decimal places
-    if FDecimalPlacesAlwaysShown then
-       Result := Result + '.' + MakeStr('0', FDecimalPlaces)
+    if FUseThousandSeparator then
+      Result := JclFormatSettings.ThousandSeparator
     else
-       Result := Result + '.' + MakeStr('#', FDecimalPlaces);
+      Result := '';
+    Result := Result + '0' + JclFormatSettings.DecimalSeparator;
+    if FDecimalPlacesAlwaysShown then
+       Result := Result + MakeStr('0', FDecimalPlaces)
+    else
+       Result := Result + MakeStr('#', FDecimalPlaces);
   end;
 end;
 
