@@ -60,6 +60,7 @@ type
     FTrimValue: Boolean;
     FIsReadOnly: Boolean;
     FPaintControl: TPaintControl;
+    FFailOnInvalidDate: Boolean;
     function GetDataField: string;
     function GetDataSource: TDataSource;
     function GetReadOnly: Boolean;
@@ -97,6 +98,7 @@ type
     property DataSource: TDataSource read GetDataSource write SetDataSource;
     property TrimValue: Boolean read FTrimValue write FTrimValue default True;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly default False;
+    property FailOnInvalidDate: Boolean read FFailOnInvalidDate write FFailOnInvalidDate default True;
   end;
 
 {$IFDEF UNITVERSIONING}
@@ -112,7 +114,7 @@ const
 implementation
 
 uses
-  Variants, SysUtils, ComCtrls, CommCtrl,
+  Variants, SysUtils, ComCtrls, CommCtrl, DateUtils,
   {$IFNDEF COMPILER12_UP}
   JvJCLUtils,
   {$ENDIF ~COMPILER12_UP}
@@ -121,6 +123,11 @@ uses
 function IsNullOrEmptyStringField(Field: TField): Boolean;
 begin
   Result := Field.IsNull or ((Field is TStringField) and (Trim(Field.AsString) = ''));
+end;
+
+function IsDateField(const AField: TField; out ADateTimeValue: TDateTime): Boolean;
+begin
+  Result := AField.IsNull or ((AField is TStringField) and TryStrToDate(AField.AsString, ADateTimeValue));
 end;
 
 //=== { TJvDBDateTimePicker } ================================================
@@ -149,6 +156,7 @@ begin
   FBeepOnError := True;
   FTrimValue := True;
   FPaintControl := TPaintControl.Create(Self, DATETIMEPICK_CLASS);
+  FFailOnInvalidDate := True;
 end;
 
 ///////////////////////////////////////////////////////////////////////////
@@ -234,6 +242,8 @@ end;
 ///////////////////////////////////////////////////////////////////////////
 
 procedure TJvDBDateTimePicker.DataChange(Sender: TObject);
+var
+  value: TDateTime;
 begin
   if Field <> nil then
   begin
@@ -243,6 +253,10 @@ begin
     begin
       if IsDateAndTimeField then
         DateTime := Field.AsDateTime
+      else if (not FailOnInvalidDate) and IsDateField(Field, value) then
+        DateTime := DateOf(value)
+      else if not FailOnInvalidDate then
+        DateTime := NullDate
       else
         DateTime := Int(Field.AsDateTime);
     end
@@ -250,6 +264,10 @@ begin
     begin
       if IsDateAndTimeField then
         DateTime := Field.AsDateTime
+      else if (not FailOnInvalidDate) and IsDateField(Field, value) then
+        DateTime := TimeOf(value)
+      else if not FailOnInvalidDate then
+        DateTime := NullDate
       else
         DateTime := Frac(Field.AsDateTime);
     end;

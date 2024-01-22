@@ -318,6 +318,7 @@ type
     FInReset: Boolean; // Polaris
     FDataLink: TFieldDataLink;
     FCanvas: TControlCanvas;
+    FFailOnInvalidDate: Boolean;
     procedure DataChange(Sender: TObject);
     procedure EditingChange(Sender: TObject);
     function GetCanvas: TCanvas;
@@ -373,6 +374,7 @@ type
     property DataField: string read GetDataField write SetDataField;
     property DataSource: TDataSource read GetDataSource write SetDataSource;
     property ReadOnly: Boolean read GetReadOnly write SetReadOnly default False;
+    property FailOnInvalidDate: Boolean read FFailOnInvalidDate write FFailOnInvalidDate default True;
     property AutoSelect;
     property BlanksChar;
     property BorderStyle;
@@ -747,6 +749,11 @@ uses
 function IsNullOrEmptyStringField(Field: TField): Boolean;
 begin
   Result := Field.IsNull or ((Field is TStringField) and (Trim(Field.AsString) = ''));
+end;
+
+function IsDateField(const AField: TField; out ADateTimeValue: TDateTime): Boolean;
+begin
+  Result := AField.IsNull or ((AField is TStringField) and TryStrToDate(AField.AsString, ADateTimeValue));
 end;
 
 //=== { TJvDBMaskEdit } ======================================================
@@ -1394,6 +1401,7 @@ begin
   AlwaysEnableButton := True;
   AlwaysShowPopup := False;
   inherited ReadOnly := True;
+  FFailOnInvalidDate := True;
   UpdateMask;
 end;
 
@@ -1585,11 +1593,17 @@ begin
 end;
 
 procedure TJvDBDateEdit.DataChange(Sender: TObject);
+var
+  value: TDateTime;
 begin
   if FDataLink.Field <> nil then
   begin
     EditMask := GetDateMask;
     if IsNullOrEmptyStringField(FDataLink.Field) then
+      inherited SetDate(NullDate)
+    else if (not FailOnInvalidDate) and IsDateField(FDataLink.Field, value) then
+      inherited SetDate(value)
+    else if not FailOnInvalidDate then
       inherited SetDate(NullDate)
     else
       inherited SetDate(FDataLink.Field.AsDateTime);
