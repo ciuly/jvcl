@@ -1778,7 +1778,8 @@ begin
           FSelectEmpty := True;
       end;
       SelectCurrent;
-    end;
+    end else if Key = VK_RETURN then
+      SelectCurrent;
   end;
 end;
 
@@ -2884,7 +2885,7 @@ procedure TJvDBLookupCombo.KeyDown(var Key: Word; Shift: TShiftState);
 var
   Delta: Integer;
 begin
-  inherited KeyDown(Key, Shift); // Let the user override the behavior
+  inherited KeyDown(Key, Shift); // Let the user override the behavior via event
   if FListActive and ((Key = VK_UP) or (Key = VK_DOWN)) then
   begin
     if ssAlt in Shift then
@@ -2923,12 +2924,21 @@ begin
   end;
 
   if (Key <> 0) and FListVisible then
+  begin
     FDataList.KeyDown(Key, Shift);
+    if Key = VK_RETURN then
+      CloseUp(True);
+  end;
 end;
 
 procedure TJvDBLookupCombo.KeyPress(var Key: Char);
+var
+  DoReset: Boolean;
 begin
   inherited KeyPress(Key);
+
+  DoReset := (Key = Esc) and FEscapeKeyReset;
+
   if FListVisible then
   begin
     if TabSelects and IsDropDown and (Key = Tab) then
@@ -2949,17 +2959,14 @@ begin
       DropDown;
       if FListVisible then
         FDataList.KeyPress(Key);
-    end
-    else
-    if (Key = Esc) and FEscapeKeyReset then
-    begin
-      if (Field <> nil) and FDataLink.Active and CanModify and
-         not VarIsEmpty(FLastValue) and (Field.Value <> FLastValue) and FDataLink.Edit then
-      begin
-        Field.Value := FLastValue;
-        Key := #0;
-      end;
     end;
+  end;
+
+  if DoReset and (Field <> nil) and FDataLink.Active and CanModify and
+     not VarIsEmpty(FLastValue) and (Field.Value <> FLastValue) and FDataLink.Edit then
+  begin
+    Field.Value := FLastValue;
+    Key := #0;
   end;
 
   if (Key = Esc) and (not FEscapeKeyPassToForm) then
