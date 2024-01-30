@@ -380,6 +380,8 @@ type
     FDropDownWidth: Integer;
     FDropDownAlign: TDropDownAlign;
     FEscapeKeyReset: Boolean;
+    FEscapeKeyPassToForm: Boolean;
+    FReturnKeyPassToForm: Boolean;
     FDeleteKeyClear: Boolean;
     FListVisible: Boolean;
     FPressed: Boolean;
@@ -479,6 +481,8 @@ type
     property DropDownCount: Integer read FDropDownCount write FDropDownCount default 8;
     property DropDownWidth: Integer read FDropDownWidth write FDropDownWidth default 0;
     property EscapeKeyReset: Boolean read FEscapeKeyReset write FEscapeKeyReset default True;
+    property EscapeKeyPassToForm: Boolean read FEscapeKeyPassToForm write FEscapeKeyPassToForm default True;
+    property ReturnKeyPassToForm: Boolean read FReturnKeyPassToForm write FReturnKeyPassToForm default True;
     property DeleteKeyClear: Boolean read FDeleteKeyClear write FDeleteKeyClear default True;
     property DisplayAllFields: Boolean read GetDisplayAllFields write SetDisplayAllFields default False;
     property TabSelects : Boolean read FTabSelects write FTabSelects default False;
@@ -2522,6 +2526,8 @@ begin
   FSelImage := TPicture.Create;
   Height := {GetMinHeight} 21;
   FEscapeKeyReset := True;
+  FEscapeKeyPassToForm := True;
+  FReturnKeyPassToForm := True;
   FDeleteKeyClear := True;
   FLastValue := Unassigned;
 end;
@@ -2955,6 +2961,13 @@ begin
       end;
     end;
   end;
+
+  if (Key = Esc) and (not FEscapeKeyPassToForm) then
+    Key := #0;
+
+  if (Key = Cr) and (not FReturnKeyPassToForm) then
+    Key := #0;
+
   if CharInSet(Key, [Cr, Esc]) then
     GetParentForm(Self).Perform(CM_DIALOGKEY, Byte(Key), 0);
 end;
