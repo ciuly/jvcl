@@ -88,6 +88,7 @@ type
     {**** Drag'n'Drop ****}
     YDragPos: Integer;
     TimerDnD: TTimer;
+    FAlwaysRefresh: Boolean;
     procedure InternalDataChanged;
     procedure InternalDataScrolled;
     procedure InternalRecordChanged(Field: TField);
@@ -167,6 +168,8 @@ type
     property UseFilter: Boolean read FUseFilter write FUseFilter;
     property Mirror: Boolean read FMirror write SetMirror;
     property Items;
+
+    property AlwaysRefresh: Boolean read FAlwaysRefresh write FAlwaysRefresh;
   end;
 
   TJvDBTreeViewDataLink = class(TDataLink)
@@ -279,6 +282,7 @@ type
     property OnEndDock;
     property OnStartDock;
     property Mirror;
+    property AlwaysRefresh;
   end;
 
   EJvDBTreeViewError = class(ETreeViewError);
@@ -994,6 +998,9 @@ begin
     dsBrowse:
       begin
         RecCount := FDataLink.DataSet.RecordCount;
+        if AlwaysRefresh then
+          RefreshChild(nil)
+        else
         if (RecCount = -1) or (RecCount <> OldRecCount) then
           UpdateTree;
         OldRecCount := RecCount;
